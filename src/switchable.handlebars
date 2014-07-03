@@ -1,0 +1,10 @@
+<ul class="nav nav-tabs" data-role="tabs">
+  {{#each tabs}}
+  <li><a href="#{{id}}" data-role="tab">{{{name}}}</a></li>
+  {{/each}}
+</ul>
+<div class="tab-content" data-role="panes">
+  {{#each tabs}}
+  <div class="tab-pane fade" id="{{id}}" data-remote="{{url}}" data-role="pane">{{{content}}}</div>
+  {{/each}}
+</div>
