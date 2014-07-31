@@ -1,10 +1,13 @@
 <ul class="nav nav-tabs" data-role="tabs">
   {{#each tabs}}
-  <li><a href="#{{id}}" data-role="tab">{{{name}}}</a></li>
+  <li><a href="#{{id}}" data-role="tab">{{{index}}}</a></li>
   {{/each}}
 </ul>
 <div class="tab-content" data-role="panes">
   {{#each tabs}}
-  <div class="tab-pane fade" id="{{id}}" data-remote="{{url}}" data-role="pane">{{{content}}}</div>
+  <div class="tab-pane fade" id="{{id}}" data-role="pane">
+      <div class="img"><a href="{{linkUrl}}" target="_blank"><img src="{{imgUrl}}" alt="{{imgAlt}}"></a></div>
+      <p class="txt"><a href="{{linkUrl}}" target="_blank">{{{imgDescription}}}</a><b class="bg"></b></p>
+  </div>
   {{/each}}
 </div>

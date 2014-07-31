@@ -2,12 +2,22 @@ define(function (require, exports, module) {
 /**
  * 轮播
  *
- * @module Switchable
- */
+ * @module Switchable*/
+
 'use strict';
 
 var $ = require('$'), 
   Widget = require('widget');
+/*define("pandora/switchable/1.0.0/switchable-debug", [ "$-debug", "pandora/widget/1.0.0/widget-debug", "pandora/base/1.0.0/base-debug", "pandora/class/1.0.0/class-debug", "pandora/events/1.0.0/events-debug" ], function(require, exports, module) {
+   *//* *
+     * 轮播
+     *
+     * @module Switchable*//*
+
+    "use strict";
+    var $ = require("$-debug"), Widget = require("pandora/widget/1.0.0/widget-debug");*/
+
+    var Effects = require('./plugins/effects');
 /**
  * 轮播基础模块
  *
@@ -15,176 +25,238 @@ var $ = require('$'),
  * @constructor
  */
 var Switchable = Widget.extend({
-
-  defaults: {
-    classPrefix: 'ue-switchable',
-    // 上一张按钮
-    prevButton: null,
-    // 下一张按钮
-    nextButton: null,
-    container: null,
-    // data:{},
-    delegates: {
-      '{{triggerType}} [data-role=tab]': 'slide'
+    defaults: {
+        classPrefix: 'ue-switchable',
+        // 上一张按钮
+        prevButton: '[data-role=prev]',
+        // 下一张按钮
+        nextButton: '[data-role=next]',
+        container: null,
+        // data:{},
+        delegates: {
+            '{{triggerType}} [data-role=tab]': 'slide'
+        },
+        // element: '<div></div>',
+        // 初始切换到哪个面板
+        initialTab: 0,
+        paneClass: '',
+        // 阻止 location.hash 变化
+        preventDefault: true,
+        // 触发类型
+        triggerType: 'mouseover',
+        // 激活样式
+        tabClass: 'current',
+        interval: 3,
+        autoplay: false,
+        //播放方式 1 左右滚动 2上下滚动 3 渐变
+        playMode: "",
+        // 切换效果，可取 scrollx | scrolly | fade 或直接传入 effect function
+        effect: "none",
+        // 有多少屏
+        step: 1,
+        // length: function () {
+        //     return Math.ceil(this.option('panels').length / this.option('step'))
+        // },
+        // 可见视图区域的大小。一般不需要设定此值，仅当获取值不正确时，用于手工指定大小
+        viewSize: [],
+        template: require('./switchable-debug-debug.handlebars')
     },
-    // element: '<div></div>',
-    // 初始切换到哪个面板
-    initialTab: 0,
-    paneClass: 'active in',
-    // 阻止 location.hash 变化
-    preventDefault: true,
-    // 触发类型
-    triggerType: 'mouseover',
-    // 激活样式
-    tabClass: 'active',
+    setup: function() {
+        //初始化隐藏panes
+        var panes = this.role('pane');
+        if(panes.length > 0) {
+            panes.hide();
+        } else {
+            this.element.parent().parent().find('[data-role=pane]').hide();
+        }
+        !!this.option('playMode') && this.role('tabs').css('zIndex', 10);
+        var initialTab = this.option('initialTab');
+        switch (this.option('playMode')) {
+            case 1:
+                this.option("effect", "scrollx");
+                break;
 
-    interval: 5000,
-    autoplay: true,
-    // 触发延迟
-    // delay: 3000,
-    // 一屏内有多少个 panels
-    //step: 1,
-    // 有多少屏
-    // length: function () {
-    //     return Math.ceil(this.option('panels').length / this.option('step'))
-    // },
-    // 可见视图区域的大小。一般不需要设定此值，仅当获取值不正确时，用于手工指定大小
-    // viewSize: [],
-    template: require('./switchable.handlebars')
+            case 2:
+                this.option("effect", "scrolly");
+                break;
 
-  },
+            case 3:
+                this.option("effect", "fade");
+                break;
 
-  setup: function () {
-    var initialTab = this.option('initialTab');
-
-    if (this.element.parent().length) {
-      this.option('template', null);
-    }
-    this.render();
-    if (initialTab !== -1) {
-        this.role('tab')
-        .eq(initialTab)
-        .trigger(this.option('triggerType') || 'click');
-    }
-    this.option('autoplay') && this.autoplayInstall();
-  },
-  autoplayInstall: function () {
-    var element = this.element;
-    var EVENT_NS = '.' + this.uniqueId;
-    var timer;
-    var interval = this.option('interval');
-    var that = this;
-
-
-
-    function start() {
-      // 停止之前的
-      stop();
-
-      // 设置状态
-      that.paused = false;
-
-      // 开始现在的
-      timer = setInterval(function () {
-        if (that.paused) {
+            default:
+                break;
+        }
+        this._initPlugins();
+        //间隔为空时，设置
+        if (this.element.parent().length) {
+            this.option("template", null);
+        }
+        this.render();
+        if (initialTab !== -1) {
+            this.role("tab").eq(initialTab).trigger(this.option("triggerType") || "click");
+        }
+        //单张图片隐藏切换及取消自动播放
+        this.role("tab").length <= 1 && this.role("tabs").hide();
+        if (this.role("tab").length > 1) {
+            this.option("autoplay") && /[1-9]\d*/.test(this.option("interval")) && this.autoplayInstall();
+            //如果为空，添加数字
+            this.role("tab").each(function(i, v) {
+                var isEmp = $(this).html() === "";
+                isEmp && $(this).html(i + 1);
+            });
+        }
+    },
+    autoplayInstall: function() {
+        var element = this.element;
+        var EVENT_NS = "." + this.uniqueId;
+        var timer;
+        var interval = this.option("interval") * 1e3;
+        var that = this;
+        function start() {
+            // 停止之前的
+            stop();
+            // 设置状态
+            that.paused = false;
+            // 开始现在的
+            timer = setInterval(function() {
+                if (that.paused) {
+                    return;
+                }
+                that.next();
+            }, interval);
+        }
+        function stop() {
+            if (timer) {
+                clearInterval(timer);
+                timer = null;
+            }
+            that.paused = true;
+        }
+        // start autoplay
+        start();
+        // public api
+        this.stop = stop;
+        this.start = start;
+        // 滚出可视区域后，停止自动播放
+        this._scrollDetect = throttle(function() {
+            that[isInViewport(element) ? "start" : "stop"]();
+        });
+        $(window).on("scroll" + EVENT_NS, this._scrollDetect);
+        // 鼠标悬停时，停止自动播放
+        this.element.hover(stop, start);
+    },
+    // 切换到上一视图
+    prev: function() {
+        //  设置手工向后切换标识, 外部调用 prev 一样
+        this._isBackward = true;
+        var fromIndex = this.activeTab && this.activeTab.closest("." + this.option("tabClass")).index();
+        var length = this.role("pane").size();
+        // 考虑循环切换的情况
+        var index = (fromIndex - 1 + length) % length;
+        this.slide(index, fromIndex);
+    },
+    // 切换到下一视图
+    next: function() {
+        this._isBackward = false;
+        var fromIndex = this.activeTab && this.activeTab.closest("." + this.option("tabClass")).index();
+        var length = this.role("pane").size();
+        var index = (fromIndex + 1) % length;
+        this.slide(index, fromIndex);
+    },
+    slide: function(e, fromIndex) {
+        var self = this, tabClass = self.option("tabClass"), paneClass = self.option("paneClass"), tab, pane, remote, toIndex;
+        if (typeof e === "number") {
+            tab = self.role("tab").eq(e);
+        } else if (typeof e === "string") {
+            tab = self.role("tab").filter(function() {
+                return this.hash === e;
+            });
+        } else {
+            tab = $(e.currentTarget);
+            if (self.option("preventDefault")) {
+                e.preventDefault();
+            }
+        }
+        tab.parent().addClass(tabClass).siblings((" " + tabClass).replace(/\s+/g, ".")).removeClass(tabClass);
+        toIndex = tab.parent().index();
+        if (/^#([\w-]+)$/.test(tab.prop("hash"))) {
+            pane = self.role("pane").filter(tab.prop("hash"));
+            if (pane.length === 0) {
+                pane = $(tab.prop("hash"));
+            }
+        } else {
+            pane = self.role("pane").eq(tab.parent().index());
+            if (!pane.length) {
+                pane = this.element.parent().parent().find("[data-role=pane]").eq(tab.parent().index());
+            }
+        }
+        if (pane.length) {
+            if (paneClass === "") {
+                if (!!this.option('playMode')) {
+                    var fromIndexTmp = fromIndex || this.activeTab && this.activeTab.parent().index();
+                    if (toIndex != fromIndexTmp) {
+                        var panelInfo = this._getPanelInfo(toIndex, fromIndexTmp);
+                        this._switchPanel(panelInfo);
+                    }
+                } else {
+                    pane.show().siblings("[data-role=pane]").hide();
+                }
+            } else {
+                pane.addClass(paneClass).siblings((" " + paneClass).replace(/\s+/g, ".")).removeClass(paneClass);
+            }
+            remote = pane.data("remote");
+            if (remote) {
+                pane.removeData("remote");
+                pane.load(remote);
+            }
+        }
+        self.activeTab = tab;
+        self.activePane = pane;
+        self.fire("tab", tab, pane);
+    },
+    _initPlugins: function() {
+        this._plugins = [];
+        this._plug(Effects);
+    },
+    _plug: function(plugin) {
+        var pluginAttrs = plugin.defaults;
+        if (pluginAttrs) {
+            for (var key in pluginAttrs) {
+                if (pluginAttrs.hasOwnProperty(key) && // 不覆盖用户传入的配置
+                    !(key in this.defaults)) {
+                    this.option(key, pluginAttrs[key]);
+                }
+            }
+        }
+        if (!plugin.isNeeded.call(this)) {
             return;
         }
-        that.next();
-      }, interval);
+        if (plugin.install) {
+            plugin.install.call(this);
+        }
+        this._plugins.push(plugin);
+    },
+    _getPanelInfo: function(toIndex, fromIndex) {
+        var panels = this.role("pane");
+        var step = this.option("step");
+        var fromPanels, toPanels;
+        // 初始情况下 fromIndex 为 undefined
+        if (fromIndex > -1) {
+            fromPanels = panels.slice(fromIndex * step, (fromIndex + 1) * step);
+        }
+        toPanels = panels.slice(toIndex * step, (toIndex + 1) * step);
+        return {
+            toIndex: toIndex,
+            fromIndex: fromIndex,
+            toPanels: $(toPanels),
+            fromPanels: $(fromPanels)
+        };
+    },
+    _switchPanel: function(panelInfo) {
+        panelInfo.fromPanels.hide();
+        panelInfo.toPanels.show();
     }
-
-    function stop() {
-      if (timer) {
-        clearInterval(timer);
-        timer = null;
-      }
-      that.paused = true;
-    }
-    // start autoplay
-      start();
-    // public api
-    this.stop = stop;
-    this.start = start;
-
-    // 滚出可视区域后，停止自动播放
-    this._scrollDetect = throttle(function () {
-      that[isInViewport(element) ? 'start' : 'stop']();
-    });
-    $(window).on('scroll' + EVENT_NS, this._scrollDetect);
-
-    // 鼠标悬停时，停止自动播放
-    this.element.hover(stop, start);
-  },
-  // 切换到上一视图
-  prev: function () {
-    //  设置手工向后切换标识, 外部调用 prev 一样
-    this._isBackward = true;
-
-    var fromIndex = this.activeTab && this.activeTab.index() || this.option('initialTab');
-    var length = this.role('pane').size();
-    // 考虑循环切换的情况
-    var index = (fromIndex - 1 + length) % length;
-    this.slide(index);
-  },
-
-  // 切换到下一视图
-  next: function () {
-    this._isBackward = false;
-    var fromIndex = this.activeTab && this.activeTab.index() || this.option('initialTab');
-    var length = this.role('pane').size();
-    var index = (fromIndex + 1) % length;
-    this.slide(index);
-  },
-  slide: function (e) {
-    var self = this,
-      tabClass = self.option('tabClass'),
-      paneClass = self.option('paneClass'),
-      tab, pane, remote;
-
-    if (typeof e === 'number') {
-      tab = self.role('tab').eq(e);
-    } else if (typeof e === 'string') {
-      tab = self.role('tab').filter(function () {
-        return this.hash === e;
-      });
-    } else {
-      tab = $(e.currentTarget);
-      if (self.option('preventDefault')) {
-        e.preventDefault();
-      }
-    }
-
-    tab.parent()
-      .addClass(tabClass)
-      .siblings((' ' + tabClass).replace(/\s+/g, '.'))
-      .removeClass(tabClass);
-
-    pane = self.role('pane').filter(tab.prop('hash'));
-
-    if (pane.length === 0) {
-      pane = $(tab.prop('hash'));
-    }
-
-    if (pane.length) {
-
-      pane
-        .addClass(paneClass)
-        .siblings((' ' + paneClass).replace(/\s+/g, '.'))
-        .removeClass(paneClass);
-
-      remote = pane.data('remote');
-
-      if (remote) {
-        pane.removeData('remote');
-        pane.load(remote);
-      }
-    }
-    self.activeTab = tab;
-    self.activePane = pane;
-
-    self.fire('tab', tab, pane);
-  }
-
 });
 
 module.exports = Switchable;
@@ -223,3 +295,14 @@ function isInViewport(element) {
 }
 
 });
+
+
+
+function d(data, options) {
+ options || (options = {})
+    options.helpers || (options.helpers = {})
+    for (var key in Handlebars.helpers) {
+        options.helpers[key] = options.helpers[key] || Handlebars.helpers[key]
+    }
+    return Handlebars.compile(source)(data, options)
+}

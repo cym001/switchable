@@ -14,7 +14,7 @@
   <div id="qunit-fixture">test markup</div>
   <script src="../vendor/jquery/jquery.js"></script>
   <script src="../vendor/seajs/sea.js"></script>
-  <script src="../vendor/seajs/seajs-text.js"></script>
+  <script src="../vendor/seajs/seajs-text.js"></script>蘐
   <script src="../vendor/qunit/qunit.js"></script>
   <script>
     QUnit.config.autostart = false;
@@ -62,7 +62,7 @@
           '</div>').appendTo('#qunit-fixture');
 
         var tabs = new Switchable({
-          element: '.nav-tabs',
+          element: '#qunit-fixture',
           initialTab: 1
         });
 
@@ -115,39 +115,35 @@
 
       });
 
-        /*asyncTest('asynchronous test', function() {
+        asyncTest('asynchronous test', function() {
             var tabs = new Switchable({
                 container: '#qunit-fixture',
                 data: {
                     tabs: [
                         {
-                            id: 'tab-pane-1',
-                            name: 'tab-pane-1'
+                            id: 'tab-pane-1'
                         },
                         {
-                            id: 'tab-pane-2',
-                            name: 'tab-pane-2'
+                            id: 'tab-pane-2'
                         },
                         {
-                            id: 'tab-pane-3',
-                            name: 'tab-pane-3'
+                            id: 'tab-pane-3'
                         }
                     ]
                 },
-                initialTab: 1
+                initialTab: 0
             });
             // The test is automatically paused
 
             setTimeout(function() {
-                $('.nav-tabs [data-role=tab]:eq(0)').trigger('mouseover');
-                ok( !$('#tab-pane-2').is('.active.in'), '' );
-                ok( $('.nav-tabs [data-role=tab]:eq(0)').parent().is('.active'), '' );
+                ok( $('#tab-pane-2').is('.active.in'), '' );
+                ok( $('.nav-tabs [data-role=tab]:eq(1)').parent().is('.active'), '' );
 
                 // After the assertion has been called,
                 // continue the test
                 start();
-            }, 6000)
-        })*/
+            }, 4000);
+        })
 
     });
   </script>
