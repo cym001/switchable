@@ -8,14 +8,14 @@ define(function (require, exports, module) {
 
 var $ = require('$'), 
   Widget = require('widget');
-/*define("pandora/switchable/1.0.0/switchable-debug", [ "$-debug", "pandora/widget/1.0.0/widget-debug", "pandora/base/1.0.0/base-debug", "pandora/class/1.0.0/class-debug", "pandora/events/1.0.0/events-debug" ], function(require, exports, module) {
+/*define('pandora/switchable/1.0.0/switchable-debug', [ '$-debug', 'pandora/widget/1.0.0/widget-debug', 'pandora/base/1.0.0/base-debug', 'pandora/class/1.0.0/class-debug', 'pandora/events/1.0.0/events-debug' ], function(require, exports, module) {
    *//* *
      * 轮播
      *
      * @module Switchable*//*
 
-    "use strict";
-    var $ = require("$-debug"), Widget = require("pandora/widget/1.0.0/widget-debug");*/
+    'use strict';
+    var $ = require('$-debug'), Widget = require('pandora/widget/1.0.0/widget-debug');*/
 
     var Effects = require('./plugins/effects');
 /**
@@ -49,9 +49,9 @@ var Switchable = Widget.extend({
         interval: 3,
         autoplay: false,
         //播放方式 1 左右滚动 2上下滚动 3 渐变
-        playMode: "",
+        playMode: '',
         // 切换效果，可取 scrollx | scrolly | fade 或直接传入 effect function
-        effect: "none",
+        effect: 'none',
         // 有多少屏
         step: 1,
         // length: function () {
@@ -69,19 +69,20 @@ var Switchable = Widget.extend({
         } else {
             this.element.parent().parent().find('[data-role=pane]').hide();
         }
+        this.setHeightWidth();
         !!this.option('playMode') && this.role('tabs').css('zIndex', 10);
         var initialTab = this.option('initialTab');
         switch (this.option('playMode')) {
             case 1:
-                this.option("effect", "scrollx");
+                this.option('effect', 'scrollx');
                 break;
 
             case 2:
-                this.option("effect", "scrolly");
+                this.option('effect', 'scrolly');
                 break;
 
             case 3:
-                this.option("effect", "fade");
+                this.option('effect', 'fade');
                 break;
 
             default:
@@ -90,28 +91,38 @@ var Switchable = Widget.extend({
         this._initPlugins();
         //间隔为空时，设置
         if (this.element.parent().length) {
-            this.option("template", null);
+            this.option('template', null);
         }
         this.render();
         if (initialTab !== -1) {
-            this.role("tab").eq(initialTab).trigger(this.option("triggerType") || "click");
+            this.role('tab').eq(initialTab).trigger(this.option('triggerType') || 'click');
         }
         //单张图片隐藏切换及取消自动播放
-        this.role("tab").length <= 1 && this.role("tabs").hide();
-        if (this.role("tab").length > 1) {
-            this.option("autoplay") && /[1-9]\d*/.test(this.option("interval")) && this.autoplayInstall();
+        this.role('tab').length <= 1 && this.role('tabs').hide();
+        if (this.role('tab').length > 1) {
+            this.option('autoplay') && /[1-9]\d*/.test(this.option('interval')) && this.autoplayInstall();
             //如果为空，添加数字
-            this.role("tab").each(function(i, v) {
-                var isEmp = $(this).html() === "";
+            this.role('tab').each(function(i, v) {
+                var isEmp = $(this).html() === '';
                 isEmp && $(this).html(i + 1);
             });
         }
     },
+    setHeightWidth: function() {
+        var eleWidth = this.element.width();
+        if(!this.role('pane').length || !this.option('autoplay')) {
+            return;
+        }
+        var firstImg = this.role('pane').eq(0).find('img');
+        var scale = firstImg.prop('width') && firstImg.prop('height') ? firstImg.prop('width') / firstImg.prop('height') : 4/3;
+        this.element.height(eleWidth / scale);
+        this.role('pane').width(eleWidth).height(eleWidth / scale);
+    },
     autoplayInstall: function() {
         var element = this.element;
-        var EVENT_NS = "." + this.uniqueId;
+        var EVENT_NS = '.' + this.uniqueId;
         var timer;
-        var interval = this.option("interval") * 1e3;
+        var interval = this.option('interval') * 1e3;
         var that = this;
         function start() {
             // 停止之前的
@@ -140,9 +151,9 @@ var Switchable = Widget.extend({
         this.start = start;
         // 滚出可视区域后，停止自动播放
         this._scrollDetect = throttle(function() {
-            that[isInViewport(element) ? "start" : "stop"]();
+            that[isInViewport(element) ? 'start' : 'stop']();
         });
-        $(window).on("scroll" + EVENT_NS, this._scrollDetect);
+        $(window).on('scroll' + EVENT_NS, this._scrollDetect);
         // 鼠标悬停时，停止自动播放
         this.element.hover(stop, start);
     },
@@ -150,70 +161,89 @@ var Switchable = Widget.extend({
     prev: function() {
         //  设置手工向后切换标识, 外部调用 prev 一样
         this._isBackward = true;
-        var fromIndex = this.activeTab && this.activeTab.closest("." + this.option("tabClass")).index();
-        var length = this.role("pane").size();
-        // 考虑循环切换的情况
-        var index = (fromIndex - 1 + length) % length;
-        this.slide(index, fromIndex);
+        this.autoChange();
     },
     // 切换到下一视图
     next: function() {
         this._isBackward = false;
-        var fromIndex = this.activeTab && this.activeTab.closest("." + this.option("tabClass")).index();
-        var length = this.role("pane").size();
-        var index = (fromIndex + 1) % length;
+        this.autoChange();
+    },
+    autoChange: function() {
+        var fromIndex;
+        if (this.activeTab) {
+            if (this.activeTab.parent().data('role') == 'tabs') {
+                fromIndex = this.activeTab.index();
+            } else {
+                fromIndex = this.activeTab.closest('.' + this.option('tabClass')).index();
+            }
+        }
+        var length = this.role('pane').size();
+        var index = this._isBackward ? (fromIndex - 1 + length) % length : (fromIndex + 1) % length;
         this.slide(index, fromIndex);
     },
     slide: function(e, fromIndex) {
-        var self = this, tabClass = self.option("tabClass"), paneClass = self.option("paneClass"), tab, pane, remote, toIndex;
-        if (typeof e === "number") {
-            tab = self.role("tab").eq(e);
-        } else if (typeof e === "string") {
-            tab = self.role("tab").filter(function() {
+        var self = this, tabClass = self.option('tabClass'), paneClass = self.option('paneClass'), tab, pane, remote, toIndex;
+        if (typeof e === 'number') {
+            tab = self.role('tab').eq(e);
+        } else if (typeof e === 'string') {
+            tab = self.role('tab').filter(function() {
                 return this.hash === e;
             });
         } else {
             tab = $(e.currentTarget);
-            if (self.option("preventDefault")) {
+            if (self.option('preventDefault')) {
                 e.preventDefault();
             }
         }
-        tab.parent().addClass(tabClass).siblings((" " + tabClass).replace(/\s+/g, ".")).removeClass(tabClass);
-        toIndex = tab.parent().index();
-        if (/^#([\w-]+)$/.test(tab.prop("hash"))) {
-            pane = self.role("pane").filter(tab.prop("hash"));
+        //简单结构特殊处理
+        var isSimpleStruct = tab.parent().data('role') == 'tabs';
+        if (isSimpleStruct) {
+            tab.addClass(tabClass).siblings((' ' + tabClass).replace(/\s+/g, '.')).removeClass(tabClass);
+            toIndex = tab.index();
+        } else {
+            tab.parent().addClass(tabClass).siblings((' ' + tabClass).replace(/\s+/g, '.')).removeClass(tabClass);
+            toIndex = tab.parent().index();
+        }
+
+        if (/^#([\w-]+)$/.test(tab.prop('hash'))) {
+            pane = self.role('pane').filter(tab.prop('hash'));
             if (pane.length === 0) {
-                pane = $(tab.prop("hash"));
+                pane = $(tab.prop('hash'));
             }
         } else {
-            pane = self.role("pane").eq(tab.parent().index());
+            pane = self.role('pane').eq(toIndex);
             if (!pane.length) {
-                pane = this.element.parent().parent().find("[data-role=pane]").eq(tab.parent().index());
+                pane = this.element.parent().parent().find('[data-role=pane]').eq(toIndex);
             }
         }
         if (pane.length) {
-            if (paneClass === "") {
+            if (paneClass === '') {
                 if (!!this.option('playMode')) {
-                    var fromIndexTmp = fromIndex || this.activeTab && this.activeTab.parent().index();
+                    var fromIndexTmp;
+                    if (isSimpleStruct) {
+                        fromIndexTmp = fromIndex ||  this.activeTab && this.activeTab.index();
+                    } else {
+                        fromIndexTmp = fromIndex ||  this.activeTab && this.activeTab.parent().index();
+                    }
                     if (toIndex != fromIndexTmp) {
                         var panelInfo = this._getPanelInfo(toIndex, fromIndexTmp);
                         this._switchPanel(panelInfo);
                     }
                 } else {
-                    pane.show().siblings("[data-role=pane]").hide();
+                    pane.show().siblings('[data-role=pane]').hide();
                 }
             } else {
-                pane.addClass(paneClass).siblings((" " + paneClass).replace(/\s+/g, ".")).removeClass(paneClass);
+                pane.addClass(paneClass).siblings((' ' + paneClass).replace(/\s+/g, '.')).removeClass(paneClass);
             }
-            remote = pane.data("remote");
+            remote = pane.data('remote');
             if (remote) {
-                pane.removeData("remote");
+                pane.removeData('remote');
                 pane.load(remote);
             }
         }
         self.activeTab = tab;
         self.activePane = pane;
-        self.fire("tab", tab, pane);
+        self.fire('tab', tab, pane);
     },
     _initPlugins: function() {
         this._plugins = [];
@@ -238,8 +268,8 @@ var Switchable = Widget.extend({
         this._plugins.push(plugin);
     },
     _getPanelInfo: function(toIndex, fromIndex) {
-        var panels = this.role("pane");
-        var step = this.option("step");
+        var panels = this.role('pane');
+        var step = this.option('step');
         var fromPanels, toPanels;
         // 初始情况下 fromIndex 为 undefined
         if (fromIndex > -1) {
