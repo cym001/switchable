@@ -8,14 +8,6 @@ define(function (require, exports, module) {
 
 var $ = require('$'), 
   Widget = require('widget');
-/*define('pandora/switchable/1.0.0/switchable-debug', [ '$-debug', 'pandora/widget/1.0.0/widget-debug', 'pandora/base/1.0.0/base-debug', 'pandora/class/1.0.0/class-debug', 'pandora/events/1.0.0/events-debug' ], function(require, exports, module) {
-   *//* *
-     * 轮播
-     *
-     * @module Switchable*//*
-
-    'use strict';
-    var $ = require('$-debug'), Widget = require('pandora/widget/1.0.0/widget-debug');*/
 
     var Effects = require('./plugins/effects');
 /**
@@ -27,14 +19,14 @@ var $ = require('$'),
 var Switchable = Widget.extend({
     defaults: {
         classPrefix: 'ue-switchable',
-        // 上一张按钮
-        prevButton: '[data-role=prev]',
-        // 下一张按钮
-        nextButton: '[data-role=next]',
         container: null,
         // data:{},
         delegates: {
-            '{{triggerType}} [data-role=tab]': 'slide'
+            '{{triggerType}} [data-role=tab]': 'slide',
+            'click [data-role=prev]' : 'prev',
+            'click [data-role=next]' : 'next',
+            'click [data-role=move2left]': 'slideTabs',
+            'click [data-role=move2right]': 'slideTabs'
         },
         // element: '<div></div>',
         // 初始切换到哪个面板
@@ -286,6 +278,17 @@ var Switchable = Widget.extend({
     _switchPanel: function(panelInfo) {
         panelInfo.fromPanels.hide();
         panelInfo.toPanels.show();
+    },
+    slideTabs: function(e) {
+        var container = this.role('tabs').parent(), firstTab = this.role('tab').eq(0), that = this, tabWidth = firstTab.width() * this.role('tab').length, maxSize = Math.ceil(tabWidth / container.width()), flag = $(e.currentTarget).data('role') === 'move2right';
+        this.currentTabPos = this.currentTabPos || 1;
+        if (!flag && this.currentTabPos == 1 || flag && this.currentTabPos == maxSize) {
+            return;
+        }
+        flag ? this.currentTabPos++ : this.currentTabPos--;
+        this.role('tabs').animate({
+            marginLeft: - (that.currentTabPos - 1) * container.width()
+        }, 'fast');
     }
 });
 
