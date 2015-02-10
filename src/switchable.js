@@ -6,7 +6,7 @@ define(function (require, exports, module) {
 
 'use strict';
 
-var $ = require('$'), 
+var $ = require('$'),
   Widget = require('widget');
 
     var Effects = require('./plugins/effects');
@@ -190,11 +190,19 @@ var Switchable = Widget.extend({
         //简单结构特殊处理
         var isSimpleStruct = tab.parent().data('role') == 'tabs';
         if (isSimpleStruct) {
-            tab.addClass(tabClass).siblings((' ' + tabClass).replace(/\s+/g, '.')).removeClass(tabClass);
-            toIndex = tab.index();
+          if(tab.find('a').length == 0) {
+            tab.addClass(tabClass).siblings((" " + tabClass).replace(/\s+/g, ".")).removeClass(tabClass)
+          } else {
+            tab.parent().find((" " + tabClass).replace(/\s+/g, ".")).removeClass(tabClass);
+            tab.find('a').addClass(tabClass);
+          }
+          //tab.addClass(tabClass).siblings((" " + tabClass).replace(/\s+/g, ".")).removeClass(tabClass);
+          toIndex = tab.index();
         } else {
-            tab.parent().addClass(tabClass).siblings((' ' + tabClass).replace(/\s+/g, '.')).removeClass(tabClass);
-            toIndex = tab.parent().index();
+          tab.parent().parent().find((" " + tabClass).replace(/\s+/g, ".")).removeClass(tabClass);
+          tab.addClass(tabClass);
+          //tab.parent().addClass(tabClass).siblings((" " + tabClass).replace(/\s+/g, ".")).removeClass(tabClass);
+          toIndex = tab.parent().index();
         }
 
         if (/^#([\w-]+)$/.test(tab.prop('hash'))) {
