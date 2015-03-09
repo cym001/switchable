@@ -204,18 +204,6 @@ var Switchable = Widget.extend({
         } else {
           tab.find(tabElement).addClass(tabClass);
         }
-        /*var isSimpleStruct = tab.parent().data('role') == 'tabs';
-        if (isSimpleStruct) {
-          if(tab.find('a').length == 0) {
-            tab.addClass(tabClass);
-          } else {
-            tab.find('a').addClass(tabClass);
-          }
-          //tab.addClass(tabClass).siblings((" " + tabClass).replace(/\s+/g, ".")).removeClass(tabClass);
-        } else {
-          tab.addClass(tabClass);
-          //tab.parent().addClass(tabClass).siblings((" " + tabClass).replace(/\s+/g, ".")).removeClass(tabClass);
-        }*/
         toIndex = self.getTabIndex(tab);
 
         if (/^#([\w-]+)$/.test(tab.prop('hash'))) {
@@ -233,11 +221,7 @@ var Switchable = Widget.extend({
             if (paneClass === '') {
                 if (!!this.option('playMode')) {
                     var fromIndexTmp;
-                    if (isSimpleStruct) {
-                        fromIndexTmp = fromIndex ||  this.activeTab && this.activeTab.index();
-                    } else {
-                        fromIndexTmp = fromIndex ||  this.activeTab && this.activeTab.parent().index();
-                    }
+                    fromIndexTmp = fromIndex ||  this.activeTab && self.getTabIndex(this.activeTab);
                     if (toIndex != fromIndexTmp) {
                         var panelInfo = this._getPanelInfo(toIndex, fromIndexTmp);
                         this._switchPanel(panelInfo);
