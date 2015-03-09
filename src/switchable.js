@@ -38,6 +38,7 @@ var Switchable = Widget.extend({
         triggerType: 'mouseover',
         // 激活样式
         tabClass: 'current',
+        tabElement: 'a',
         interval: 3,
         autoplay: false,
         //播放方式 1 左右滚动 2上下滚动 3 渐变
@@ -173,8 +174,18 @@ var Switchable = Widget.extend({
         var index = this._isBackward ? (fromIndex - 1 + length) % length : (fromIndex + 1) % length;
         this.slide(index, fromIndex);
     },
+    getTabIndex: function(el){
+      var par = el;
+      while(true) {
+        if (par.parent().data('role') == 'tabs') {
+          break;
+        }
+        par = par.parent();
+      }
+      return par.index();
+    },
     slide: function(e, fromIndex) {
-        var self = this, tabClass = self.option('tabClass'), paneClass = self.option('paneClass'), tab, pane, remote, toIndex;
+        var self = this, tabClass = self.option('tabClass'), tabElement = self.option('tabElement'), paneClass = self.option('paneClass'), tab, pane, remote, toIndex;
         if (typeof e === 'number') {
             tab = self.role('tab').eq(e);
         } else if (typeof e === 'string') {
@@ -187,23 +198,25 @@ var Switchable = Widget.extend({
                 e.preventDefault();
             }
         }
-        //简单结构特殊处理
-        var isSimpleStruct = tab.parent().data('role') == 'tabs';
+        self.role('tabs').find(('.' + tabClass).replace(/\s+/g, '')).removeClass(tabClass);
+        if (tab.find(tabElement).length == 0) {
+          tab.addClass(tabClass);
+        } else {
+          tab.find(tabElement).addClass(tabClass);
+        }
+        /*var isSimpleStruct = tab.parent().data('role') == 'tabs';
         if (isSimpleStruct) {
           if(tab.find('a').length == 0) {
-            tab.addClass(tabClass).siblings((" " + tabClass).replace(/\s+/g, ".")).removeClass(tabClass)
+            tab.addClass(tabClass);
           } else {
-            tab.parent().find((" " + tabClass).replace(/\s+/g, ".")).removeClass(tabClass);
             tab.find('a').addClass(tabClass);
           }
           //tab.addClass(tabClass).siblings((" " + tabClass).replace(/\s+/g, ".")).removeClass(tabClass);
-          toIndex = tab.index();
         } else {
-          tab.parent().parent().find((" " + tabClass).replace(/\s+/g, ".")).removeClass(tabClass);
           tab.addClass(tabClass);
           //tab.parent().addClass(tabClass).siblings((" " + tabClass).replace(/\s+/g, ".")).removeClass(tabClass);
-          toIndex = tab.parent().index();
-        }
+        }*/
+        toIndex = self.getTabIndex(tab);
 
         if (/^#([\w-]+)$/.test(tab.prop('hash'))) {
             pane = self.role('pane').filter(tab.prop('hash'));
